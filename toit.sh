@@ -1,69 +1,63 @@
 #!/bin/bash
 
-# Check if "toit" is already in use on the system
-if command -v toit &> /dev/null; then
-  echo "⚠️ The command 'toit' is already in use on your system."
-  echo "Switching to 'h2it' instead to avoid conflicts."
-  COMMAND_NAME="h2it"
-else
-  COMMAND_NAME="toit"
+# Check if running as root
+if [ "$(id -u)" -ne 0 ]; then
+  echo "You must run this script as root or with sudo."
+  exit 1
 fi
 
-# Check if ~/.bashrc or ~/.bash_profile exists
-BASHRC_FILE="$HOME/.bashrc"
-if [ ! -f "$BASHRC_FILE" ]; then
-  BASHRC_FILE="$HOME/.bash_profile"
-fi
+# Path to the current 'toit' executable
+TOIT_PATH="/usr/local/bin/toit"
 
-# Backup .bashrc or .bash_profile before modifying
-cp "$BASHRC_FILE" "$BASHRC_FILE-backup"
-echo "🛠️ Backup of your $BASHRC_FILE created."
-
-# Add the command to ~/.bashrc or ~/.bash_profile
-cat <<EOF >> "$BASHRC_FILE"
-
-# Custom command $COMMAND_NAME
-$COMMAND_NAME() {
-  if [ "\$1" == "removeyourself" ]; then
-    echo "🚮 Removing $COMMAND_NAME and the bootstrap script..."
-
-    # Remove the custom function
-    sed -i '/$COMMAND_NAME()/,/^}/d' $BASHRC_FILE
-
-    # Remove the backup and reload
-    source $BASHRC_FILE
-    echo "✅ Removed $COMMAND_NAME successfully!"
-    return 0
-  fi
-
-  if [ -z "\$1" ]; then
-    echo "Usage: $COMMAND_NAME <script-name> or $COMMAND_NAME removeyourself"
-    return 1
-  fi
-
-  SCRIPT_NAME="\$1-setup.sh"
-  REPO_URL="https://raw.githubusercontent.com/matthewsawatzky/HowTo-IT/main"
-
-  echo "📦 Fetching and running \$SCRIPT_NAME from HowTo-IT..."
-
-  curl -sS "\$REPO_URL/\$SCRIPT_NAME" -o "/tmp/\$SCRIPT_NAME"
-
-  if [ ! -s "/tmp/\$SCRIPT_NAME" ]; then
-    echo "❌ Could not fetch script. Check name or repo."
-    return 2
-  fi
-
-  chmod +x "/tmp/\$SCRIPT_NAME"
-  exec "/tmp/\$SCRIPT_NAME"
+# Function to update the script if it's ours
+update_toit_script() {
+  echo "Updating to the latest version of our 'toit' command..."
+  curl -sSL https://raw.githubusercontent.com/matthewsawatzky/HowTo-IT/main/toit.sh -o /tmp/toit.sh
+  sudo mv /tmp/toit.sh /usr/local/bin/toit
+  sudo chmod +x /usr/local/bin/toit
 }
 
-EOF
+# Check if 'toit' exists and is our custom version
+if [ -f "$TOIT_PATH" ]; then
+  if grep -q "Our custom toit script" "$TOIT_PATH"; then
+    echo "Our custom 'toit' command is already installed."
+    # Optionally update the script if needed
+    # update_toit_script
+    exit 0
+  else
+    echo "Found another program using the 'toit' command. Replacing it with 'h2it'..."
+    sudo rm -f "$TOIT_PATH"
+  fi
+else
+  echo "'toit' command not found. Installing our custom version as 'toit'..."
+fi
 
-# Inform user and reload the shell config
-echo "🔄 Added $COMMAND_NAME function to $BASHRC_FILE."
-echo "Please run 'source $BASHRC_FILE' or restart your terminal to apply changes."
-source "$BASHRC_FILE"
+# Download and install the correct version of 'toit'
+curl -sSL https://raw.githubusercontent.com/matthewsawatzky/HowTo-IT/main/toit.sh -o /tmp/toit.sh
 
-# Let the user know about the success and the ability to use the new command
-echo "✅ The '$COMMAND_NAME' command is now installed. You can use it like this:"
-echo "$COMMAND_NAME <script-name>"
+# Move the script to /usr/local/bin/ and rename it to 'toit'
+sudo mv /tmp/toit.sh /usr/local/bin/toit
+
+# Make the script executable
+sudo chmod +x /usr/local/bin/toit
+
+# Check if another program uses 'toit', and if so, rename it to 'h2it'
+if command -v toit &>/dev/null && ! grep -q "Our custom toit script" "$TOIT_PATH"; then
+  echo "Renaming 'toit' to 'h2it' to avoid conflicts with another program."
+  sudo mv /usr/local/bin/toit /usr/local/bin/h2it
+
+  # Modify .bashrc to add the 'h2it' function (if not already added)
+  if ! grep -q "h2it()" ~/.bashrc; then
+    echo "Adding 'h2it' function to ~/.bashrc..."
+    echo -e "\n# h2it function\nfunction h2it() {\n  bash /usr/local/bin/h2it \$1;\n}" >> ~/.bashrc
+    # Backup and apply changes to .bashrc
+    cp ~/.bashrc ~/.bashrc.backup
+    source ~/.bashrc
+  fi
+
+  echo "✅ The 'h2it' command is now installed. You can use it like this:\n  h2it <script-name>"
+else
+  # If it's our custom version, it’s already correct
+  echo "Our custom 'toit' command is installed and ready to use."
+  echo "✅ The 'toit' command is now installed. You can use it like this:\n  toit <script-name>"
+fi
