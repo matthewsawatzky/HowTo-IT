@@ -1,45 +1,32 @@
 #!/bin/bash
 
-SCRIPT_NAME="toit"
-ALT_NAME="h2it"
-REPO_URL="https://raw.githubusercontent.com/matthewsawatzky/HowTo-IT/main"
+set -e
+
 INSTALL_PATH="/usr/local/bin"
+REPO_URL="https://raw.githubusercontent.com/matthewsawatzky/HowTo-IT/main"
 IDENTIFIER="# HowTo-IT Managed Command"
 
-# Check if current command is already taken by something else
-function is_our_script() {
-    grep -q "$IDENTIFIER" "$1" 2>/dev/null
-}
+echo "⬇️ Installing 'toit'..."
 
-if command -v $SCRIPT_NAME >/dev/null && ! is_our_script "$(command -v $SCRIPT_NAME)"; then
-    echo "⚠️ The command '$SCRIPT_NAME' is already in use by another program."
-    CMD=$ALT_NAME
+# Detect if 'toit' is already in use by another tool
+if command -v toit >/dev/null && ! grep -q "$IDENTIFIER" "$(command -v toit)"; then
+    echo "⚠️  'toit' command already exists and is not ours. Installing as 'h2it' instead."
+    TARGET="h2it"
 else
-    CMD=$SCRIPT_NAME
+    TARGET="toit"
 fi
 
-DEST="$INSTALL_PATH/$CMD"
+# Download and install the actual dispatcher script
+curl -sSL "$REPO_URL/toit.sh" -o "/tmp/$TARGET"
+sed -i "1s|^|$IDENTIFIER\n|" "/tmp/$TARGET"
+sudo mv "/tmp/$TARGET" "$INSTALL_PATH/$TARGET"
+sudo chmod +x "$INSTALL_PATH/$TARGET"
 
-echo "⬇️ Installing '$CMD'..."
+echo "🔧 Adding '$TARGET' function to ~/.bashrc..."
 
-curl -sSL "$REPO_URL/toit.sh" -o /tmp/$CMD.sh || {
-    echo "❌ Failed to download script."
-    exit 1
-}
-
-# Add identifier to detect our own script later
-sed -i "1s|^|$IDENTIFIER\n|" /tmp/$CMD.sh
-
-sudo mv /tmp/$CMD.sh "$DEST"
-sudo chmod +x "$DEST"
-
-# Add function to .bashrc
-if ! grep -q "function $CMD()" ~/.bashrc; then
-    echo "🔧 Adding '$CMD' function to ~/.bashrc..."
-    echo -e "\n# $CMD command function\nfunction $CMD() {\n  bash $DEST \"\$@\"\n}" >> ~/.bashrc
-    echo "🌀 Run 'source ~/.bashrc' or restart your terminal to activate."
-else
-    echo "ℹ️ '$CMD' function already exists in ~/.bashrc"
+if ! grep -q "function $TARGET()" "$HOME/.bashrc"; then
+  echo -e "\nfunction $TARGET() {\n  $INSTALL_PATH/$TARGET \"\$@\"\n}" >> "$HOME/.bashrc"
 fi
 
-echo "✅ '$CMD' installed and ready!"
+echo "🌀 Run 'source ~/.bashrc' or restart your terminal to activate."
+echo "✅ '$TARGET' installed and ready!"
