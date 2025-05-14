@@ -92,5 +92,7 @@ EOF
 else
   echo "📌 Manual run: ./xmrig -c $CONFIG_FILE"
 fi
-
+echo "👉 To start mining, run:"
+echo "./xmrig/build/xmrig -c config.json"
+echo "----------------------------------"
 echo "🎉 XMRig setup complete."
