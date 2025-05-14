@@ -16,3 +16,8 @@ For example
 ```
 bash <(curl -sS https://raw.githubusercontent.com/matthewsawatzky/HowTo-IT/main/bootstrap.sh) xmrig
 ```
+
+That will:
+	1.	Download xmrig-setup.sh from this repo
+	2.	Set it as executable
+	3.	Run it directly from your system
