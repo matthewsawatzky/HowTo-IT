@@ -6,6 +6,28 @@ A collection of clean, practical shell scripts to set up self-hosted services an
 
 ## ✅ Quick Start
 
+This installs a CMD tool called ####toit
+
+```bash
+curl -sSL https://raw.githubusercontent.com/matthewsawatzky/HowTo-IT/main/install-toit.sh -o /tmp/install-toit.sh \
+  && bash /tmp/install-toit.sh
+source ~/.bashrc
+```
+
+To install a package from this repo just run:
+
+```bash
+toit xxx-setup.sh
+```
+
+To Delete ####toit#### juts run:
+```bash
+toit removeyourself
+```
+
+
+
+
 To install any setup script from this repo, just run:
 
 ```bash
